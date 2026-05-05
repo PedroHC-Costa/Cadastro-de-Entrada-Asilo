@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Controle de Acesso Religioso - Asilo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e9f0f5;
+            padding: 16px;
+            padding-bottom: 40px;
+        }
+        .container {
+            max-width: 550px;
+            margin: auto;
+            background: white;
+            border-radius: 28px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.6rem;
+            color: #1a4d6b;
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        h2 {
+            font-size: 1.3rem;
+            margin: 20px 0 10px 0;
+            border-left: 5px solid #2c7da0;
+            padding-left: 12px;
+            color: #0b3b4f;
+        }
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 12px;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 14px;
+            font-size: 1rem;
+            background: #fefefe;
+        }
+        select {
+            cursor: pointer;
+        }
+        button {
+            background: #2c7da0;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #1f5e7a;
+        }
+        .card {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #dee4e9;
+        }
+        .hidden {
+            display: none;
+        }
+        .btn-pequeno {
+            background: #4a6f8a;
+            font-size: 0.85rem;
+            padding: 8px;
+            margin-top: 8px;
+        }
+        #listaVisitantes {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        .visitante-item {
+            background: white;
+            border-bottom: 1px solid #ccc;
+            padding: 8px;
+        }
+        .resultado-destaque {
+            background: #e6f7ff;
+            border-radius: 12px;
+            padding: 8px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container" id="app">
+    <!-- TELA DE LOGIN -->
+    <div id="telaLogin">
+        <h1>🏠 Controle de Acesso</h1>
+        <p style="text-align:center">Asilo São José</p>
+        <div class="card">
+            <label>🧑‍💼 Funcionário (login)</label>
+            <input type="text" id="login" placeholder="Ex: portaria">
+            <label>🔐 Senha</label>
+            <input type="password" id="senha" placeholder="****">
+            <button id="btnLogin">Entrar</button>
+            <p style="font-size:0.75rem; text-align:center; margin-top:10px;">Login: portaria | Senha: 1234</p>
+        </div>
+    </div>
+
+    <!-- TELA PRINCIPAL -->
+    <div id="telaPrincipal" class="hidden">
+        <h1>📋 Asilo São José</h1>
+        <p style="text-align:center">Bem-vindo, <span id="funcionarioNome">funcionário</span> <button id="btnSair" style="width:auto; padding:4px 12px; margin-left:10px;">Sair</button></p>
+        
+        <!-- CADASTRO DE VISITANTE -->
+        <h2>➕ Novo Visitante Religioso</h2>
+        <div class="card">
+            <label>Nome completo *</label><input type="text" id="nome" required>
+            <label>CPF *</label><input type="text" id="cpf" placeholder="Apenas números">
+            <label>Endereço</label><input type="text" id="endereco">
+            <label>Telefone</label><input type="tel" id="telefone">
+            <label>Instituição (Igreja/Organização)</label><input type="text" id="instituicao">
+            <label>Propósito principal</label><input type="text" id="proposito" value="Visita espiritual">
+            <label>Indicado por</label><input type="text" id="indicadoPor" placeholder="Funcionário ou outro visitante">
+            <label>Observações</label><textarea id="obs" rows="2"></textarea>
+            <button id="btnCadastrar">📌 Cadastrar Visitante</button>
+        </div>
+
+        <!-- REGISTRO DE VISITA (com busca por lista suspensa e filtro) -->
+        <h2>📝 Registrar Visita (Hoje)</h2>
+        <div class="card">
+            <label>🔍 Filtrar visitante (nome ou CPF)</label>
+            <input type="text" id="filtroVisitante" placeholder="Digite para filtrar a lista...">
+            
+            <label>👤 Selecione o visitante:</label>
+            <select id="selectVisitante" size="5" style="height: auto; min-height: 120px;">
+                <option value="">--- Carregando visitantes ---</option>
+            </select>
+            
+            <div id="resultadoBusca" style="margin-top:10px;"></div>
+            
+            <label>✝️ Propósito específico hoje</label>
+            <input type="text" id="propositoHoje" placeholder="Ex: Culto, oração, acompanhamento">
+            <button id="btnRegistrarEntrada">✅ Registrar ENTRADA</button>
+            <button id="btnRegistrarSaida" style="background:#6c757d;">⏱️ Registrar SAÍDA</button>
+        </div>
+
+        <!-- LISTA DE VISITANTES -->
+        <h2>📋 Visitantes cadastrados</h2>
+        <button id="btnListar" class="btn-pequeno">Atualizar lista</button>
+        <div id="listaVisitantes"></div>
+    </div>
+</div>
+
+<script>
+    // ==================== CONFIGURAÇÃO ====================
+    // >>> SUBSTITUA ESTA URL PELA URL DO SEU APPS SCRIPT (WEB APP) <<<
+    const URL_APP_SCRIPT = "https://script.google.com/macros/s/AKfycbxwKDkRe4gCcbjM1QlFtMXid1NnacIiD_RObQwkrQzsgS0CEe9Y4Q8j-uoGa7cYcb0n1w/exec";
+
+    let funcionarioLogado = null;
+    let visitanteSelecionado = null;
+    let listaCompletaVisitantes = []; // armazena todos os visitantes para filtro
+
+    // Função que evita CORS usando Content-Type: text/plain
+    function requestBackend(acao, dados, callback) {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', URL_APP_SCRIPT, true);
+        xhr.setRequestHeader('Content-Type', 'text/plain');
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        const resposta = JSON.parse(xhr.responseText);
+                        callback(resposta);
+                    } catch(e) {
+                        callback({ success: false, erro: 'Resposta inválida do servidor' });
+                    }
+                } else {
+                    callback({ success: false, erro: 'Erro na conexão: ' + xhr.status });
+                }
+            }
+        };
+        xhr.send(JSON.stringify({ acao: acao, dados: dados }));
+    }
+
+    // LOGIN
+    document.getElementById('btnLogin').addEventListener('click', () => {
+        const login = document.getElementById('login').value;
+        const senha = document.getElementById('senha').value;
+        if (!login || !senha) {
+            alert('Preencha login e senha');
+            return;
+        }
+        requestBackend('login', { login, senha }, (res) => {
+            if (res.success && res.data.autenticado) {
+                funcionarioLogado = login;
+                document.getElementById('funcionarioNome').innerText = login;
+                document.getElementById('telaLogin').classList.add('hidden');
+                document.getElementById('telaPrincipal').classList.remove('hidden');
+                carregarListaVisitantes();
+            } else {
+                alert('Login ou senha incorretos');
+            }
+        });
+    });
+
+    document.getElementById('btnSair').addEventListener('click', () => {
+        funcionarioLogado = null;
+        document.getElementById('telaPrincipal').classList.add('hidden');
+        document.getElementById('telaLogin').classList.remove('hidden');
+        document.getElementById('login').value = '';
+        document.getElementById('senha').value = '';
+    });
+
+    // CADASTRAR VISITANTE
+    document.getElementById('btnCadastrar').addEventListener('click', () => {
+        const dados = {
+            nome: document.getElementById('nome').value.trim(),
+            cpf: document.getElementById('cpf').value.trim(),
+            endereco: document.getElementById('endereco').value,
+            telefone: document.getElementById('telefone').value,
+            instituicao: document.getElementById('instituicao').value,
+            proposito: document.getElementById('proposito').value,
+            indicadoPor: document.getElementById('indicadoPor').value,
+            obs: document.getElementById('obs').value
+        };
+        if (!dados.nome || !dados.cpf) {
+            alert('Nome e CPF são obrigatórios');
+            return;
+        }
+        requestBackend('cadastrarVisitante', dados, (res) => {
+            if (res.success) {
+                alert('Visitante cadastrado com sucesso!');
+                limparCamposCadastro();
+                carregarListaVisitantes();
+            } else {
+                alert('Erro ao cadastrar: ' + (res.erro || ''));
+            }
+        });
+    });
+
+    function limparCamposCadastro() {
+        document.getElementById('nome').value = '';
+        document.getElementById('cpf').value = '';
+        document.getElementById('endereco').value = '';
+        document.getElementById('telefone').value = '';
+        document.getElementById('instituicao').value = '';
+        document.getElementById('proposito').value = 'Visita espiritual';
+        document.getElementById('indicadoPor').value = '';
+        document.getElementById('obs').value = '';
+    }
+
+    // Preenche o dropdown de visitantes com base no filtro
+    function preencherDropdownVisitantes(filtro = '') {
+        const select = document.getElementById('selectVisitante');
+        const termo = filtro.toLowerCase().trim();
+        
+        let visitantesFiltrados = listaCompletaVisitantes;
+        if (termo) {
+            visitantesFiltrados = listaCompletaVisitantes.filter(v => 
+                v.nome_completo.toLowerCase().includes(termo) || 
+                (v.cpf && v.cpf.includes(termo))
+            );
+        }
+
+        if (visitantesFiltrados.length === 0) {
+            select.innerHTML = '<option value="">--- Nenhum visitante encontrado ---</option>';
+            return;
+        }
+
+        select.innerHTML = '';
+        visitantesFiltrados.forEach(v => {
+            const option = document.createElement('option');
+            option.value = v.cpf;
+            option.textContent = `${v.nome_completo} (${v.instituicao || 'Sem igreja'}) - CPF: ${v.cpf}`;
+            option.dataset.visitante = JSON.stringify(v);
+            select.appendChild(option);
+        });
+        
+        // Se houver visitantes e nenhum selecionado, seleciona o primeiro
+        if (select.options.length > 0 && !visitanteSelecionado) {
+            select.selectedIndex = 0;
+            triggerSelectChange();
+        }
+    }
+
+    // Dispara a atualização das informações do visitante selecionado
+    function triggerSelectChange() {
+        const select = document.getElementById('selectVisitante');
+        const selectedOption = select.options[select.selectedIndex];
+        if (selectedOption && selectedOption.value) {
+            try {
+                const visitante = JSON.parse(selectedOption.dataset.visitante);
+                visitanteSelecionado = visitante;
+                document.getElementById('resultadoBusca').innerHTML = `
+                    <div class="resultado-destaque">
+                        ✅ Visitante: <strong>${visitante.nome_completo}</strong><br>
+                        Instituição: ${visitante.instituicao || '—'}<br>
+                        Status: ${visitante.status || 'Ativo'}
+                    </div>`;
+            } catch(e) {
+                document.getElementById('resultadoBusca').innerHTML = '<span style="color:red;">Erro ao carregar dados do visitante.</span>';
+                visitanteSelecionado = null;
+            }
+        } else {
+            visitanteSelecionado = null;
+            document.getElementById('resultadoBusca').innerHTML = '';
+        }
+    }
+
+    // REGISTRAR ENTRADA
+    document.getElementById('btnRegistrarEntrada').addEventListener('click', () => {
+        if (!visitanteSelecionado) {
+            alert('Selecione um visitante na lista.');
+            return;
+        }
+        const proposito = document.getElementById('propositoHoje').value || 'Visita';
+        if (!funcionarioLogado) {
+            alert('Funcionário não identificado');
+            return;
+        }
+        requestBackend('registrarVisita', {
+            cpfOuId: visitanteSelecionado.cpf,
+            proposito: proposito,
+            funcionario: funcionarioLogado,
+            dataSaida: '',
+            horaSaida: ''
+        }, (res) => {
+            if (res.success) {
+                alert(`Entrada registrada para ${visitanteSelecionado.nome_completo}`);
+                document.getElementById('propositoHoje').value = '';
+                // Não limpa a seleção, apenas mantém
+            } else {
+                alert('Erro ao registrar entrada: ' + (res.erro || ''));
+            }
+        });
+    });
+
+    // REGISTRAR SAÍDA
+    document.getElementById('btnRegistrarSaida').addEventListener('click', () => {
+        if (!visitanteSelecionado) {
+            alert('Selecione um visitante na lista.');
+            return;
+        }
+        if (!funcionarioLogado) return;
+        requestBackend('registrarVisita', {
+            cpfOuId: visitanteSelecionado.cpf,
+            proposito: document.getElementById('propositoHoje').value || 'Saída',
+            funcionario: funcionarioLogado,
+            dataSaida: new Date().toISOString().slice(0,10),
+            horaSaida: new Date().toLocaleTimeString('pt-BR')
+        }, (res) => {
+            if (res.success) {
+                alert(`Saída registrada para ${visitanteSelecionado.nome_completo}`);
+                // Não limpa a seleção
+            } else {
+                alert('Erro ao registrar saída: ' + (res.erro || ''));
+            }
+        });
+    });
+
+    // CARREGAR LISTA DE VISITANTES (atualiza dropdown e a listagem)
+    function carregarListaVisitantes() {
+        requestBackend('listarVisitantes', {}, (res) => {
+            const div = document.getElementById('listaVisitantes');
+            if (res.success && Array.isArray(res.data)) {
+                listaCompletaVisitantes = res.data;
+                // Atualiza dropdown
+                preencherDropdownVisitantes(document.getElementById('filtroVisitante').value);
+                
+                // Atualiza a lista textual lateral
+                if (res.data.length === 0) {
+                    div.innerHTML = '<p>Nenhum visitante cadastrado ainda.</p>';
+                } else {
+                    div.innerHTML = res.data.map(v => `<div class="visitante-item"><strong>${v.nome_completo}</strong> (${v.instituicao || '—'}) - CPF: ${v.cpf}<br>Status: ${v.status || 'Ativo'}</div>`).join('');
+                }
+            } else {
+                div.innerHTML = '<p>Erro ao carregar visitantes.</p>';
+            }
+        });
+    }
+
+    // Evento de filtro no campo de busca
+    document.getElementById('filtroVisitante').addEventListener('input', (e) => {
+        preencherDropdownVisitantes(e.target.value);
+    });
+
+    // Evento de seleção no dropdown
+    document.getElementById('selectVisitante').addEventListener('change', triggerSelectChange);
+
+    document.getElementById('btnListar').addEventListener('click', carregarListaVisitantes);
+</script>
+</body>
+</html>
